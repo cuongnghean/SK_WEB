@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Hồ sơ cá nhân{% endblock %}
+
+{% block page_title %}Hồ sơ cá nhân{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('user.dashboard') }}">User</a></li>
+<li class="breadcrumb-item active">Hồ sơ</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-user mr-1"></i>
+                    Thông tin cá nhân
+                </h3>
+            </div>
+            <div class="card-body">
+                <form id="profileForm">
+                    <div class="mb-3">
+                        <label class="form-label">Tên đăng nhập</label>
+                        <input type="text" class="form-control" value="{{ current_user.username }}" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" value="{{ current_user.email or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Họ tên</label>
+                        <input type="text" class="form-control" id="fullName" value="{{ current_user.full_name or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Vai trò</label>
+                        <input type="text" class="form-control" value="{{ 'Quản trị viên' if current_user.is_admin else 'Người dùng' }}" disabled>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save mr-1"></i> Lưu thay đổi
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card card-info">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Thông tin tài khoản
+                </h3>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Ngày tạo:</th>
+                        <td>{{ current_user.created_at.strftime('%d/%m/%Y %H:%M') if current_user.created_at else 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Đăng nhập cuối:</th>
+                        <td>{{ current_user.last_login.strftime('%d/%m/%Y %H:%M') if current_user.last_login else 'Chưa đăng nhập' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Trạng thái:</th>
+                        <td>
+                            {% if current_user.is_active %}
+                                <span class="badge bg-success">Hoạt động</span>
+                            {% else %}
+                                <span class="badge bg-danger">Bị khóa</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$('#profileForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    $.ajax({
+        url: '{{ url_for("user.api_update_profile") }}',
+        type: 'PUT',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            email: $('#email').val(),
+            full_name: $('#fullName').val()
+        }),
+        success: function(response) {
+            if (response.success) {
+                toastr.success('Đã cập nhật hồ sơ thành công');
+            } else {
+                toastr.error(response.error);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

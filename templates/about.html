@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Giới thiệu{% endblock %}
+
+{% block page_title %}Giới thiệu{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('public.search') }}">Trang chủ</a></li>
+<li class="breadcrumb-item active">Giới thiệu</li>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-info-circle mr-1"></i>
+            Giới thiệu hệ thống
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-12">
+                <h4>Hệ thống Tra cứu và Quản lý Nghĩa vụ Người Nộp Thuế</h4>
+                <p>
+                    Hệ thống được phát triển bởi Tổng cục Thuế Việt Nam nhằm phục vụ công tác quản lý 
+                    và tra cứu thông tin nghĩa vụ thuế của người nộp thuế.
+                </p>
+                
+                <h5>Tính năng chính:</h5>
+                <ul>
+                    <li>Tra cứu công khai thông tin nghĩa vụ thuế</li>
+                    <li>Quản lý danh sách người nộp thuế</li>
+                    <li>Nhập liệu hàng loạt từ file Excel</li>
+                    <li>Báo cáo thống kê trực quan</li>
+                    <li>Quản lý người dùng và phân quyền</li>
+                </ul>
+                
+                <h5>Thông tin liên hệ:</h5>
+                <p>
+                    Tổng cục Thuế Việt Nam<br>
+                    Địa chỉ: 123 Lý Thường Kiệt, Quận 11, TP. Hồ Chí Minh<br>
+                    Điện thoại: 1900 xxxx<br>
+                    Email: hotro@tax.gov.vn
+                </p>
+                
+                <p class="text-muted">
+                    <small>Phiên bản: 1.0.0 | Ngày cập nhật: 2026</small>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Hệ thống Tra cứu Thuế{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('user.dashboard') }}">User</a></li>
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-lg-4 col-6">
+        <div class="small-box bg-primary">
+            <div class="inner">
+                <h3>{{ total_nnt|default(0) }}</h3>
+                <p>Tổng số NNT</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <a href="{{ url_for('user.nnt_list') }}" class="small-box-footer">
+                Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3>{{ co_no_count|default(0) }}</h3>
+                <p>Đối tượng có nợ</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3>{{ khong_no_count|default(0) }}</h3>
+                <p>Đối tượng không nợ</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Search & Profile -->
+<div class="row">
+    <!-- Quick Search -->
+    <div class="col-lg-8">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-search mr-1"></i>
+                    Tra cứu nhanh
+                </h3>
+            </div>
+            <div class="card-body">
+                <form id="quickSearchForm">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="quickSearchInput" 
+                               placeholder="Nhập Mã số thuế hoặc Số CCCD" autocomplete="off">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Tra cứu
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Search Results -->
+                <div id="quickSearchResults" class="mt-3" style="display: none;">
+                    <div class="card card-success">
+                        <div class="card-body">
+                            <div id="quickSearchContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- User Profile -->
+    <div class="col-lg-4">
+        <div class="card card-info">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-user mr-1"></i>
+                    Thông tin tài khoản
+                </h3>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Tên đăng nhập:</th>
+                        <td>{{ current_user.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>Họ tên:</th>
+                        <td>{{ current_user.full_name or 'Chưa cập nhật' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ current_user.email or 'Chưa cập nhật' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Vai trò:</th>
+                        <td>
+                            {% if current_user.is_admin %}
+                                <span class="badge bg-danger">Quản trị viên</span>
+                            {% else %}
+                                <span class="badge bg-primary">Người dùng</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Đăng nhập cuối:</th>
+                        <td>
+                            {% if last_login %}
+                                {{ last_login.strftime('%d/%m/%Y %H:%M') }}
+                            {% else %}
+                                Chưa đăng nhập
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+                <div class="mt-3">
+                    <a href="{{ url_for('user.change_password') }}" class="btn btn-warning btn-sm">
+                        <i class="fas fa-key"></i> Đổi mật khẩu
+                    </a>
+                    <a href="{{ url_for('user.profile') }}" class="btn btn-info btn-sm">
+                        <i class="fas fa-cog"></i> Cập nhật hồ sơ
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Searches -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-history mr-1"></i>
+                    Lịch sử tra cứu gần đây (7 ngày)
+                </h3>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Loại tra cứu</th>
+                            <th>Giá trị</th>
+                            <th>Kết quả</th>
+                            <th>Thời gian</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in recent_searches %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>
+                                {% if log.SEARCH_TYPE == 'MST' %}
+                                    <span class="badge bg-primary">MST</span>
+                                {% elif log.SEARCH_TYPE == 'CCCD' %}
+                                    <span class="badge bg-info">CCCD</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ log.SEARCH_TYPE }}</span>
+                                {% endif %}
+                            </td>
+                            <td><code>{{ log.SEARCH_VALUE }}</code></td>
+                            <td>{{ log.RESULT_COUNT }} kết quả</td>
+                            <td>{{ log.CREATED_AT.strftime('%d/%m/%Y %H:%M') if log.CREATED_AT else 'N/A' }}</td>
+                            <td>
+                                {% if log.STATUS == 'SUCCESS' %}
+                                    <span class="badge bg-success">Thành công</span>
+                                {% elif log.STATUS == 'NOT_FOUND' %}
+                                    <span class="badge bg-warning">Không tìm thấy</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Lỗi</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Chưa có lịch sử tra cứu</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if recent_searches %}
+            <div class="card-footer">
+                <a href="{{ url_for('user.search_history') }}" class="text-primary">
+                    Xem tất cả lịch sử <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Quick search form handler
+    $('#quickSearchForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const query = $('#quickSearchInput').val().trim();
+        if (!query) {
+            toastr.warning('Vui lòng nhập thông tin tra cứu');
+            return;
+        }
+        
+        // Determine search type
+        const params = new URLSearchParams();
+        if (/^\d{10,13}$/.test(query)) {
+            params.append('mst', query);
+        } else {
+            params.append('cccd', query);
+        }
+        
+        showLoading();
+        
+        $.ajax({
+            url: '{{ url_for("user.api_quick_search") }}?' + params.toString(),
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                hideLoading();
+                
+                if (response.success && response.found) {
+                    displayQuickResults(response.data[0]);
+                } else {
+                    $('#quickSearchResults').show();
+                    $('#quickSearchContent').html(`
+                        <div class="alert alert-warning mb-0">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Không tìm thấy thông tin người nộp thuế.
+                        </div>
+                    `);
+                }
+            },
+            error: function() {
+                hideLoading();
+                toastr.error('Đã xảy ra lỗi khi tra cứu');
+            }
+        });
+    });
+    
+    function displayQuickResults(data) {
+        $('#quickSearchResults').show();
+        
+        let statusClass = data.TRANG_THAI_NO === 'CO_NO' ? 'bg-danger' : 'bg-success';
+        let statusText = data.TRANG_THAI_NO === 'CO_NO' ? 'Có nợ' : 'Không nợ';
+        
+        $('#quickSearchContent').html(`
+            <table class="table table-borderless mb-0">
+                <tr>
+                    <th width="30%">Mã số thuế:</th>
+                    <td><strong>${data.MST}</strong></td>
+                </tr>
+                <tr>
+                    <th>Họ tên:</th>
+                    <td>${data.HO_TEN}</td>
+                </tr>
+                <tr>
+                    <th>Số CCCD:</th>
+                    <td><code>${data.CCCD || 'N/A'}</code></td>
+                </tr>
+                <tr>
+                    <th>Trạng thái nợ:</th>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                </tr>
+                <tr>
+                    <th>Tổng nợ:</th>
+                    <td class="${data.total_debt > 0 ? 'text-danger font-weight-bold' : 'text-success'}">
+                        ${formatCurrency(data.total_debt)}
+                    </td>
+                </tr>
+            </table>
+        `);
+    }
+    
+    function formatCurrency(amount) {
+        if (!amount) return '0 VND';
+        return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
+    }
+});
+</script>
+{% endblock %}

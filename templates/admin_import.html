@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Nhập dữ liệu Excel - Hệ thống Tra cứu Thuế{% endblock %}
+
+{% block page_title %}Nhập dữ liệu Excel{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item active">Nhập dữ liệu</li>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Upload Section -->
+    <div class="col-md-8">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-upload mr-1"></i>
+                    Tải lên tệp Excel
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5><i class="icon fas fa-info"></i> Hướng dẫn nhập dữ liệu</h5>
+                    <ul class="mb-0">
+                        <li>Định dạng hỗ trợ: <strong>.xlsx</strong>, <strong>.xls</strong></li>
+                        <li>Kích thước tối đa: <strong>16MB</strong></li>
+                        <li>Các cột bắt buộc: <code>MST</code>, <code>HO_TEN</code></li>
+                        <li>Các cột tùy chọn: <code>CCCD</code>, <code>CMT</code>, <code>DIA_CHI</code>, <code>TRANG_THAI_HD</code>, <code>NO_TAM_TINH</code>, <code>LOAI_NO</code></li>
+                    </ul>
+                </div>
+                
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="excelFile">Chọn tệp Excel:</label>
+                        <div class="input-group">
+                            <div class="custom-file">
+                                <input type="file" class="custom-file-input" id="excelFile" 
+                                       accept=".xlsx,.xls" required>
+                                <label class="custom-file-label" for="excelFile">Chọn tệp...</label>
+                            </div>
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary" id="uploadBtn">
+                                    <i class="fas fa-upload mr-1"></i> Tải lên
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Progress Section -->
+                <div id="progressSection" class="mt-3" style="display: none;">
+                    <div class="progress">
+                        <div id="uploadProgress" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                    <p id="progressText" class="text-center mt-2 text-muted">Đang xử lý...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Results Section -->
+        <div class="card card-success" id="resultsCard" style="display: none;">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    Kết quả nhập liệu
+                </h3>
+            </div>
+            <div class="card-body">
+                <div id="resultsContent"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar - Templates & History -->
+    <div class="col-md-4">
+        <!-- Download Template -->
+        <div class="card card-info">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-file-download mr-1"></i>
+                    Tải mẫu Excel
+                </h3>
+            </div>
+            <div class="card-body">
+                <p>Tải file mẫu để nhập liệu đúng định dạng.</p>
+                <button type="button" class="btn btn-success btn-block" id="downloadTemplate">
+                    <i class="fas fa-download mr-1"></i> Tải file mẫu
+                </button>
+            </div>
+        </div>
+        
+        <!-- Import History -->
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-history mr-1"></i>
+                    Lịch sử nhập liệu
+                </h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tệp</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="importHistoryTable">
+                            {% for imp in import_history %}
+                            <tr>
+                                <td>
+                                    <small>{{ imp.file_name[:25] }}{% if imp.file_name|length > 25 %}...{% endif %}</small>
+                                    <br>
+                                    <small class="text-muted">{{ imp.created_at.strftime('%d/%m/%Y %H:%M') if imp.created_at else '' }}</small>
+                                </td>
+                                <td>
+                                    {% if imp.status == 'COMPLETED' %}
+                                        <span class="badge bg-success">Thành công</span>
+                                    {% elif imp.status == 'PARTIAL' %}
+                                        <span class="badge bg-warning">Một phần</span>
+                                    {% elif imp.status == 'PENDING' %}
+                                        <span class="badge bg-info">Đang xử lý</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Lỗi</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="2" class="text-center text-muted">Chưa có lịch sử nhập liệu</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Debt Types Management -->
+        <div class="card card-dark">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-tags mr-1"></i>
+                    Quản lý loại nợ
+                </h3>
+            </div>
+            <div class="card-body">
+                <div id="debtTypesList">
+                    {% for dt in debt_types %}
+                    <div class="mb-2">
+                        <span class="badge bg-primary">{{ dt.LOAI_NO }}</span>
+                        <span>{{ dt.TEN_NO }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <hr>
+                <form id="addDebtTypeForm" class="mt-3">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="newDebtType" 
+                               placeholder="Thêm loại nợ mới...">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // File input change handler
+    $('#excelFile').on('change', function() {
+        var fileName = $(this).val().split('\\').pop();
+        $(this).next('.custom-file-label').text(fileName);
+    });
+    
+    // Import form submission
+    $('#importForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        var fileInput = $('#excelFile')[0];
+        if (!fileInput.files || fileInput.files.length === 0) {
+            toastr.warning('Vui lòng chọn tệp Excel');
+            return;
+        }
+        
+        var formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        
+        // Show progress
+        $('#progressSection').show();
+        $('#uploadBtn').prop('disabled', true);
+        $('#uploadProgress').css('width', '30%').text('30%');
+        
+        $.ajax({
+            url: '{{ url_for("admin.api_import") }}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                var xhr = new XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        var percent = Math.round((e.loaded / e.total) * 100);
+                        $('#uploadProgress').css('width', percent + '%').text(percent + '%');
+                    }
+                });
+                return xhr;
+            },
+            success: function(response) {
+                $('#uploadProgress').css('width', '100%').text('100%');
+                
+                if (response.success) {
+                    showResults(response.results);
+                    toastr.success(response.message);
+                    refreshImportHistory();
+                } else {
+                    toastr.error(response.error);
+                    showError(response.error);
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = 'Đã xảy ra lỗi khi nhập dữ liệu';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                toastr.error(errorMsg);
+                showError(errorMsg);
+            },
+            complete: function() {
+                $('#uploadBtn').prop('disabled', false);
+                setTimeout(function() {
+                    $('#progressSection').hide();
+                    $('#uploadProgress').css('width', '0%').text('');
+                }, 2000);
+            }
+        });
+    });
+    
+    function showResults(results) {
+        var stats = results.stats;
+        var errors = results.errors;
+        
+        var html = `
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h2 class="text-primary">${stats.total_rows}</h2>
+                        <p>Tổng số dòng</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h2 class="text-success">${stats.success_rows}</h2>
+                        <p>Thành công</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h2 class="text-danger">${stats.failed_rows}</h2>
+                        <p>Thất bại</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h2 class="text-info">${stats.insert_rows}</h2>
+                        <p>Thêm mới</p>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <p><strong>Thời gian xử lý:</strong> ${results.duration} giây</p>
+        `;
+        
+        if (errors && errors.length > 0) {
+            html += `
+                <hr>
+                <h5><i class="fas fa-exclamation-triangle text-warning mr-1"></i> Lỗi (hiển thị tối đa 10 lỗi)</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Dòng</th>
+                                <th>MST</th>
+                                <th>Lỗi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            errors.slice(0, 10).forEach(function(err) {
+                html += `
+                    <tr>
+                        <td>${err.row}</td>
+                        <td><code>${err.mst}</code></td>
+                        <td>${err.error}</td>
+                    </tr>
+                `;
+            });
+            
+            if (errors.length > 10) {
+                html += `
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">
+                            ... và ${errors.length - 10} lỗi khác
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            html += `</tbody></table></div>`;
+        }
+        
+        $('#resultsContent').html(html);
+        $('#resultsCard').show();
+    }
+    
+    function showError(message) {
+        $('#resultsContent').html(`
+            <div class="alert alert-danger">
+                <i class="fas fa-times-circle mr-1"></i>
+                ${message}
+            </div>
+        `);
+        $('#resultsCard').show();
+    }
+    
+    function refreshImportHistory() {
+        $.get('{{ url_for("admin.import_page") }}', function(data) {
+            var newHistory = $(data).find('#importHistoryTable').html();
+            $('#importHistoryTable').html(newHistory);
+        });
+    }
+    
+    // Download template
+    $('#downloadTemplate').on('click', function() {
+        // Create a sample Excel template
+        var sampleData = [
+            ['MST', 'HO_TEN', 'CCCD', 'CMT', 'DIA_CHI', 'TRANG_THAI_HD', 'NO_TAM_TINH', 'LOAI_NO'],
+            ['0123456789', 'Nguyễn Văn A', '040093001234', '', '123 Đường ABC, Quận 1, TP.HCM', 'Active', 0, 'THUÊ'],
+            ['0123456790', 'Trần Thị B', '040094005678', '', '456 Đường XYZ, Quận 2, TP.HCM', 'Active', 1500000, 'THUÊ'],
+            ['0123456791', 'Lê Văn C', '040095008901', '', '789 Đường DEF, Quận 3, TP.HCM', 'Active', 0, 'PHÍ']
+        ];
+        
+        // Download as CSV (browser native)
+        var csvContent = sampleData.map(e => e.join(',')).join('\n');
+        var blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+        var link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'mau_import_nnt.csv';
+        link.click();
+        
+        toastr.info('Đã tải file mẫu CSV. Bạn có thể chuyển đổi sang Excel.');
+    });
+    
+    // Add debt type
+    $('#addDebtTypeForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        var newType = $('#newDebtType').val().trim();
+        if (!newType) {
+            toastr.warning('Vui lòng nhập tên loại nợ');
+            return;
+        }
+        
+        $.ajax({
+            url: '{{ url_for("admin.api_create_debt_type") }}',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ loai_no: newType, ten_no: newType }),
+            success: function(response) {
+                if (response.success) {
+                    toastr.success('Đã thêm loại nợ mới');
+                    location.reload();
+                } else {
+                    toastr.error(response.error);
+                }
+            },
+            error: function() {
+                toastr.error('Đã xảy ra lỗi');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

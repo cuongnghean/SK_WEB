@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .result { margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h2>Test Login API</h2>
+    <button id="testBtn">Test Login (admin/admin123)</button>
+    <div id="result"></div>
+    
+    <script>
+    $('#testBtn').click(function() {
+        $('#result').html('Loading...');
+        
+        // First get login page to get CSRF token
+        $.get('/auth/login', function(html) {
+            var match = html.match(/name="csrf_token" value="([^"]+)"/);
+            if (!match) {
+                $('#result').html('<div class="error">No CSRF token found!</div>');
+                return;
+            }
+            var csrf = match[1];
+            
+            // Now submit login
+            $.post('/auth/login', {
+                csrf_token: csrf,
+                username: 'admin',
+                password: 'admin123',
+                remember_me: false
+            }, function(data, status, xhr) {
+                if (xhr.status === 302 || xhr.status === 200) {
+                    $('#result').html('<div class="success">Login SUCCESS! Redirecting to: ' + xhr.getResponseHeader('Location') + '</div>');
+                } else {
+                    $('#result').html('<div class="error">Login FAILED: ' + status + '</div>');
+                }
+            }).fail(function(xhr) {
+                $('#result').html('<div class="error">Error: ' + xhr.status + ' ' + xhr.statusText + '</div>');
+            });
+        }).fail(function(xhr) {
+            $('#result').html('<div class="error">Failed to get login page: ' + xhr.status + '</div>');
+        });
+    });
+    </script>
+</body>
+</html>

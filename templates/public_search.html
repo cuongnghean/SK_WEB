@@ -1,0 +1,560 @@
+{% extends "base.html" %}
+
+{% block title %}Tra cứu Nghĩa vụ Người Nộp Thuế - Tổng cục Thuế{% endblock %}
+
+{% block page_title %}Tra cứu Nghĩa vụ Người Nộp Thuế{% endblock %}
+
+{% block content %}
+<style>
+/* Toàn cục & Biến màu sắc */
+:root {
+    --primary-gradient: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --warning-gradient: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);
+    --danger-gradient: linear-gradient(135deg, #e65c00 0%, #f9d423 100%);
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    --input-focus-shadow: 0 0 0 4px rgba(42, 82, 152, 0.15);
+}
+
+/* Banner chính */
+.search-hero {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 3.5rem 2rem;
+    border-radius: 20px;
+    margin-bottom: 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(30, 60, 114, 0.2);
+}
+.search-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -30%;
+    width: 60%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.05);
+    transform: rotate(30deg);
+    pointer-events: none;
+}
+.search-hero h2 {
+    font-weight: 700;
+    font-size: 2.25rem;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.75rem;
+}
+.search-hero .subtitle {
+    font-weight: 300;
+    opacity: 0.9;
+    font-size: 1.15rem;
+}
+
+/* Khối hộp tìm kiếm */
+.search-box {
+    background: white;
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 2.5rem;
+    border: 1px solid rgba(0,0,0,0.03);
+}
+
+/* Tabs chuyển đổi hình thức tra cứu */
+.search-tabs {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid #f1f3f5;
+    padding-bottom: 0.75rem;
+}
+.search-tab {
+    padding: 0.85rem 1.75rem;
+    border: none;
+    background: transparent;
+    color: #495057;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.search-tab:hover {
+    background: #f8f9fa;
+    color: #1e3c72;
+}
+.search-tab.active {
+    background: #1e3c72;
+    color: white;
+    box-shadow: 0 6px 15px rgba(30, 60, 114, 0.15);
+}
+
+/* Ô nhập liệu & Nút nhấn */
+.search-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.search-input-group input {
+    width: 100%;
+    padding: 1.15rem 1.5rem;
+    padding-right: 150px;
+    font-size: 1.1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 14px;
+    transition: all 0.25s ease;
+    font-weight: 400;
+    color: #212529;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
+}
+.search-input-group input:focus {
+    border-color: #2a5298;
+    box-shadow: var(--input-focus-shadow);
+    outline: none;
+}
+.search-input-group input::placeholder {
+    color: #adb5bd;
+}
+.search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.8rem 1.75rem;
+    background: #1e3c72;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 10px rgba(30, 60, 114, 0.1);
+}
+.search-btn:hover {
+    background: #2a5298;
+    box-shadow: 0 6px 15px rgba(30, 60, 114, 0.2);
+}
+
+/* Khu vực Captcha bảo mật */
+.captcha-section {
+    background: #f8f9fa;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-top: 2rem;
+    border: 1px solid #e9ecef;
+}
+.captcha-input {
+    padding: 0.85rem 1rem;
+    font-size: 1.4rem;
+    text-align: center;
+    letter-spacing: 10px;
+    font-weight: 700;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+.captcha-input:focus {
+    border-color: #2a5298;
+    box-shadow: var(--input-focus-shadow);
+}
+.captcha-image-wrapper {
+    background: white;
+    padding: 0.5rem;
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+    display: inline-block;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+}
+.captcha-image {
+    cursor: pointer;
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+    height: 48px;
+}
+.captcha-image:hover {
+    transform: scale(1.03);
+}
+
+/* Thẻ kết quả tra cứu */
+.result-card {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    border: 1px solid rgba(0,0,0,0.02);
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-bottom: 3rem;
+}
+.result-header {
+    background: var(--success-gradient);
+    color: white;
+    padding: 1.75rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+.result-header.not-found {
+    background: var(--danger-gradient);
+}
+.result-header.error {
+    background: var(--warning-gradient);
+}
+.result-header h4 {
+    font-weight: 700;
+    font-size: 1.35rem;
+}
+.result-body {
+    padding: 2.5rem;
+    background: white;
+}
+
+/* Khối thông tin nhỏ bên trong */
+.info-card {
+    background: #fdfdfd;
+    border-radius: 16px;
+    padding: 1.75rem;
+    height: 100%;
+    border: 1px solid #f1f3f5;
+}
+.info-card h5 {
+    font-weight: 700;
+    font-size: 1.1rem;
+    border-left: 4px solid #1e3c72;
+    padding-left: 0.75rem;
+}
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f3f5;
+}
+.info-item:last-child {
+    border-bottom: none;
+}
+.info-item .label {
+    color: #6c757d;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+.info-item .value {
+    color: #212529;
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+/* Badge trạng thái nợ thuế / hoạt động */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6rem 1.25rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.3px;
+}
+.status-badge.has-debt {
+    background: #fff5f5;
+    color: #e03131;
+    border: 1px solid #ffc9c9;
+}
+.status-badge.no-debt {
+    background: #ebfbee;
+    color: #2b8a3e;
+    border: 1px solid #b2f2bb;
+}
+.activity-badge {
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+/* Hiệu ứng chuyển động */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+<div class="container-fluid py-4" style="max-width: 1200px; margin: 0 auto;">
+    <div class="search-hero">
+        <i class="fas fa-landmark fa-3x mb-3" style="opacity: 0.9;"></i>
+        <h2>Hệ thống Tra cứu Nghĩa vụ Thuế Công khai</h2>
+        <p class="subtitle mb-0">
+            Cung cấp thông tin trực tuyến minh bạch cho Người Nộp Thuế<br>
+            <small style="font-size: 0.85rem; opacity: 0.75;">Cổng thông tin tự động thuộc cơ quan quản lý Thuế Việt Nam</small>
+        </p>
+    </div>
+
+    <div class="search-box">
+        <div class="alert alert-light d-flex align-items-center mb-4 p-3" style="border: 1px solid #e9ecef; border-radius: 12px; background: #fafbfe;" role="alert">
+            <i class="fas fa-info-circle fa-lg text-primary me-3"></i>
+            <div style="font-size: 0.95rem; color: #495057;">
+                <strong>Hướng dẫn nghiệp vụ:</strong> Quý vị vui lòng lựa chọn phương thức tra cứu, sau đó cung cấp chính xác dữ liệu <strong>Mã số thuế (MST)</strong> hoặc <strong>Số CCCD/Định danh</strong> tương ứng để kết xuất thông tin.
+            </div>
+        </div>
+
+        <div class="search-tabs">
+            <button class="search-tab active" id="tab-mst" onclick="switchTab('mst')">
+                <i class="fas fa-fingerprint"></i> Tra cứu theo Mã số thuế (MST)
+            </button>
+            <button class="search-tab" id="tab-cccd" onclick="switchTab('cccd')">
+                <i class="fas fa-address-card"></i> Tra cứu theo Căn cước công dân
+            </button>
+        </div>
+
+        <div id="search-mst">
+            <div class="search-input-group">
+                <input type="text" id="mstInput" class="form-control" 
+                       placeholder="Nhập chính xác mã số thuế gồm 10 hoặc 13 ký tự số..."
+                       maxlength="14" autocomplete="off">
+                <button type="button" class="search-btn" onclick="initSearch()">
+                    <i class="fas fa-search me-2"></i>Tiếp tục
+                </button>
+            </div>
+        </div>
+
+        <div id="search-cccd" style="display: none;">
+            <div class="search-input-group">
+                <input type="text" id="cccdInput" class="form-control" 
+                       placeholder="Nhập số định danh cá nhân / Số CCCD gồm 9 hoặc 12 số..."
+                       maxlength="13" autocomplete="off">
+                <button type="button" class="search-btn" onclick="initSearch()">
+                    <i class="fas fa-search me-2"></i>Tiếp tục
+                </button>
+            </div>
+        </div>
+
+        <div class="captcha-section" id="captchaSection" style="display: none;">
+            <div class="row align-items-center">
+                <div class="col-md-7 mb-3 mb-md-0">
+                    <label class="form-label fw-bold mb-2 text-dark" style="font-size: 0.95rem;">
+                        <i class="fas fa-user-shield text-primary me-2"></i>
+                        Vui lòng nhập mã an toàn để xác thực phiên:
+                    </label>
+                    <input type="text" id="captchaInput" class="form-control captcha-input" 
+                           placeholder="MÃ XÁC THỰC" maxlength="4" autocomplete="off">
+                </div>
+                <div class="col-md-5 text-center">
+                    <div class="captcha-image-wrapper mb-1">
+                        <img id="captchaImage" src="{{ url_for('public.captcha') }}" 
+                             alt="Mã bảo vệ" class="captcha-image img-fluid" 
+                             onclick="refreshCaptcha()">
+                    </div>
+                    <div>
+                        <small class="text-muted style-italic" style="cursor: pointer; font-size: 0.8rem;" onclick="refreshCaptcha()">
+                            <i class="fas fa-redo me-1"></i> Làm mới mã xác thực khác
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-center gap-2 mt-4">
+                <button type="button" class="btn btn-primary px-5 py-2.5" style="border-radius: 10px; font-weight: 600; background: #1e3c72; border:none;" onclick="performSearch()">
+                    <i class="fas fa-check-double me-2"></i>Gửi yêu cầu tra cứu
+                </button>
+                <button type="button" class="btn btn-outline-secondary px-4 py-2.5" style="border-radius: 10px; font-weight: 600;" onclick="hideCaptcha()">
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultsSection" style="display: none;">
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentTab = 'mst';
+let searchValue = '';
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.search-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('search-mst').style.display = tab === 'mst' ? 'block' : 'none';
+    document.getElementById('search-cccd').style.display = tab === 'cccd' ? 'block' : 'none';
+    document.getElementById('captchaSection').style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'none';
+}
+
+function initSearch() {
+    var input = currentTab === 'mst' ? 
+        document.getElementById('mstInput') : 
+        document.getElementById('cccdInput');
+    
+    searchValue = input.value.trim();
+    
+    if (!searchValue) {
+        showToast('Vui lòng nhập thông tin tra cứu!', 'warning');
+        input.focus();
+        return;
+    }
+    
+    document.getElementById('captchaSection').style.display = 'block';
+    document.getElementById('captchaInput').value = '';
+    document.getElementById('captchaInput').focus();
+    refreshCaptcha();
+}
+
+function refreshCaptcha() {
+    document.getElementById('captchaImage').src = 
+        '{{ url_for("public.captcha") }}?' + new Date().getTime();
+}
+
+function hideCaptcha() {
+    document.getElementById('captchaSection').style.display = 'none';
+}
+
+function performSearch() {
+    var captcha = document.getElementById('captchaInput').value.trim();
+    
+    if (!searchValue) {
+        showToast('Vui lòng nhập thông tin tra cứu!', 'warning');
+        return;
+    }
+    
+    var paramKey = currentTab === 'mst' ? 'mst' : 'cccd';
+    var url = '/api/public/search?' + paramKey + '=' + encodeURIComponent(searchValue);
+    
+    if (captcha) {
+        url += '&captcha=' + encodeURIComponent(captcha);
+    }
+    
+    showLoading();
+    
+    fetch(url)
+        .then(function(response) { 
+            return response.json(); 
+        })
+        .then(function(data) {
+            hideLoading();
+            if (data.success) {
+                if (data.found) {
+                    showResults(data);
+                } else {
+                    showNotFound(data.message || 'Hệ thống không tìm thấy kết quả phù hợp với dữ liệu truy vấn.');
+                }
+            } else {
+                showError(data.message || 'Đã xảy ra sự cố trong quá trình xử lý.');
+                if (data.message && data.message.indexOf('xác thực') !== -1) {
+                    refreshCaptcha();
+                    document.getElementById('captchaInput').value = '';
+                }
+            }
+        })
+        .catch(function(error) {
+            hideLoading();
+            showError('Mất kết nối với máy chủ quản lý Thuế. Vui lòng kiểm tra lại đường truyền mạng mạng LAN.');
+        });
+}
+
+function showResults(data) {
+    var nnt = data.data[0];
+    var isHasDebt = nnt.TRANG_THAI_NO === 'CO_NO';
+    var isActive = nnt.TRANG_THAI_HD === 'Active';
+    
+    var html = '<div class="result-card">' +
+        '<div class="result-header">' +
+            '<i class="fas fa-check-circle fa-2x"></i>' +
+            '<div><h4 class="mb-1">Kết quả kết xuất thông tin</h4><small>Hệ thống tìm thấy ' + data.count + ' bản ghi hợp lệ</small></div>' +
+        '</div>' +
+        '<div class="result-body">' +
+            '<div class="row g-4">' +
+                '<div class="col-md-6">' +
+                    '<div class="info-card">' +
+                        '<h5 class="text-primary mb-3"><i class="fas fa-id-badge me-2"></i>Hồ sơ Người nộp thuế</h5>' +
+                        '<div class="info-item"><span class="label">Mã số thuế (MST)</span><span class="value text-primary font-monospace">' + nnt.MST + '</span></div>' +
+                        '<div class="info-item"><span class="label">Tên Người nộp thuế</span><span class="value text-uppercase">' + nnt.HO_TEN + '</span></div>' +
+                        '<div class="info-item"><span class="label">Số Định danh / CCCD</span><span class="value">' + (nnt.CCCD || 'Chưa đồng bộ') + '</span></div>' +
+                        '<div class="info-item"><span class="label">Địa chỉ đăng ký</span><span class="value text-end" style="max-width: 60%; font-size:0.9rem;">' + (nnt.DIA_CHI || 'N/A') + '</span></div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="col-md-6">' +
+                    '<div class="info-card">' +
+                        '<h5 class="text-primary mb-3"><i class="fas fa-balance-scale me-2"></i>Trạng thái Nghĩa vụ Thuế</h5>' +
+                        '<div class="info-item"><span class="label">Tình trạng nợ thuế</span>' +
+                            '<span class="status-badge ' + (isHasDebt ? 'has-debt' : 'no-debt') + '">' +
+                                '<i class="fas ' + (isHasDebt ? 'fa-exclamation-triangle' : 'fa-check-double') + ' me-2"></i>' +
+                                (isHasDebt ? 'PHÁT SINH NỢ THUẾ' : 'HOÀN THÀNH NGHĨA VỤ') +
+                            '</span>' +
+                        '</div>' +
+                        '<div class="info-item"><span class="label">Trạng thái hoạt động</span>' +
+                            '<span class="badge activity-badge ' + (isActive ? 'bg-success' : 'bg-secondary') + '">' + (isActive ? 'Mã số thuế đang hoạt động' : 'Mã số thuế tạm ngưng') + '</span>' +
+                        '</div>' +
+                        '<div class="info-item"><span class="label">Tổng số tiền nợ (Tạm tính)</span><span class="value ' + (nnt.total_debt > 0 ? 'text-danger' : 'text-success') + '" style="font-size: 1.1rem; font-weight:700;">' + formatCurrency(nnt.total_debt) + '</span></div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+    '</div>';
+    
+    document.getElementById('resultsSection').innerHTML = html;
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+function showNotFound(message) {
+    document.getElementById('resultsSection').innerHTML = '<div class="result-card">' +
+        '<div class="result-header not-found">' +
+            '<i class="fas fa-search-minus fa-2x"></i>' +
+            '<div><h4 class="mb-1">Không có kết quả</h4><small>Thông tin tra cứu không tồn tại</small></div>' +
+        '</div>' +
+        '<div class="result-body text-center py-5">' +
+            '<i class="fas fa-folder-open fa-4x text-muted mb-3" style="opacity: 0.4;"></i>' +
+            '<p class="text-muted fw-medium">' + message + '</p>' +
+        '</div>' +
+    '</div>';
+    document.getElementById('resultsSection').style.display = 'block';
+}
+
+function showError(message) {
+    document.getElementById('resultsSection').innerHTML = '<div class="result-card">' +
+        '<div class="result-header error">' +
+            '<i class="fas fa-engine-warning fa-2x"></i>' +
+            '<div><h4 class="mb-1">Sự cố xử lý yêu cầu</h4><small>Quá trình truy vấn dữ liệu bị gián đoạn</small></div>' +
+        '</div>' +
+        '<div class="result-body text-center py-5">' +
+            '<i class="fas fa-times-circle fa-4x text-danger mb-3" style="opacity: 0.8;"></i>' +
+            '<p class="text-danger fw-bold">' + message + '</p>' +
+        '</div>' +
+    '</div>';
+    document.getElementById('resultsSection').style.display = 'block';
+}
+
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.add('active');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+function showToast(message, type) {
+    toastr[type](message);
+}
+
+function formatCurrency(amount) {
+    if (amount === null || amount === undefined) return '0 VND';
+    return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('mstInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); initSearch(); }
+    });
+    document.getElementById('cccdInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); initSearch(); }
+    });
+    document.getElementById('captchaInput').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
+    });
+});
+</script>
+{% endblock %}

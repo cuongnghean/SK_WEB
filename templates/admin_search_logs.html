@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Nhật ký tra cứu{% endblock %}
+
+{% block page_title %}Nhật ký Tra cứu{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item active">Nhật ký tra cứu</li>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-history mr-1"></i>
+            Nhật ký tra cứu
+        </h3>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-hover" id="searchLogsTable">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>IP Address</th>
+                    <th>Loại tra cứu</th>
+                    <th>Giá trị</th>
+                    <th>Số kết quả</th>
+                    <th>Thời gian phản hồi</th>
+                    <th>Trạng thái</th>
+                    <th>Thời gian</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ loop.index + (pagination.page - 1) * pagination.per_page }}</td>
+                    <td><code>{{ log.IP_ADDRESS }}</code></td>
+                    <td>
+                        {% if log.SEARCH_TYPE == 'MST' %}
+                            <span class="badge bg-primary">MST</span>
+                        {% elif log.SEARCH_TYPE == 'CCCD' %}
+                            <span class="badge bg-info">CCCD</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ log.SEARCH_TYPE }}</span>
+                        {% endif %}
+                    </td>
+                    <td><code>{{ log.SEARCH_VALUE }}</code></td>
+                    <td>{{ log.RESULT_COUNT }}</td>
+                    <td>{{ "%.2f"|format(log.RESPONSE_TIME) if log.RESPONSE_TIME else 'N/A' }} ms</td>
+                    <td>
+                        {% if log.STATUS == 'SUCCESS' %}
+                            <span class="badge bg-success">Thành công</span>
+                        {% elif log.STATUS == 'NOT_FOUND' %}
+                            <span class="badge bg-warning">Không tìm thấy</span>
+                        {% else %}
+                            <span class="badge bg-danger">Lỗi</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ log.CREATED_AT.strftime('%d/%m/%Y %H:%M:%S') if log.CREATED_AT else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pagination.page - 1 }}">Trước</a>
+                </li>
+                {% endif %}
+                
+                {% for p in range(1, pagination.pages + 1) %}
+                    {% if p >= pagination.page - 2 and p <= pagination.page + 2 %}
+                        <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pagination.page + 1 }}">Sau</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#searchLogsTable').DataTable({
+        "paging": false,
+        "lengthChange": false,
+        "searching": true,
+        "ordering": true,
+        "info": true,
+        "autoWidth": false,
+        "responsive": true,
+        "language": {
+            "search": "Tìm kiếm:",
+            "info": "Hiển thị _START_ đến _END_ của _TOTAL_ bản ghi",
+            "infoEmpty": "Không có bản ghi nào",
+            "zeroRecords": "Không tìm thấy kết quả"
+        }
+    });
+});
+</script>
+{% endblock %}

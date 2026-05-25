@@ -1,0 +1,100 @@
+# ===================================
+# Docker Compose for Tax Obligation System
+# Production-ready configuration
+# Database is hosted on Supabase Cloud (PostgreSQL)
+# ===================================
+
+version: '3.8'
+
+services:
+  # ===================================
+  # Web Application Service
+  # ===================================
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tax_obligation_web
+    restart: unless-stopped
+    
+    # Environment variables from .env file
+    env_file:
+      - .env
+    
+    # Environment variables (override/extend .env)
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - APP_ENV=production
+      - GUNICORN_WORKERS=4
+      - GUNICORN_THREADS=2
+      - GUNICORN_TIMEOUT=120
+    
+    # Port mapping (host:container)
+    ports:
+      - "${APP_PORT:-5000}:5000"
+    
+    # Volume mounts for persistent data
+    volumes:
+      # Upload files (persistent across restarts)
+      - ./uploads:/app/uploads:rw
+      # Log files (persistent across restarts)
+      - ./logs:/app/logs:rw
+      # Temporary files
+      - ./temp:/app/temp:rw
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    
+    # DNS configuration for Supabase
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    
+    # Networks
+    networks:
+      - tax_network
+
+# ===================================
+# Networks
+# ===================================
+networks:
+  tax_network:
+    driver: bridge
+    name: tax_obligation_network
+
+# ===================================
+# Volumes (for data persistence)
+# ===================================
+volumes:
+  uploads:
+    driver: local
+    name: tax_obligation_uploads
+  logs:
+    driver: local
+    name: tax_obligation_logs
+  temp:
+    driver: local
+    name: tax_obligation_temp

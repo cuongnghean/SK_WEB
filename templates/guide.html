@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Hướng dẫn sử dụng{% endblock %}
+
+{% block page_title %}Hướng dẫn sử dụng{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('public.search') }}">Trang chủ</a></li>
+<li class="breadcrumb-item active">Hướng dẫn</li>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-book mr-1"></i>
+            Hướng dẫn sử dụng hệ thống
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-12">
+                <h4>1. Tra cứu công khai</h4>
+                <p>Hệ thống cho phép tra cứu thông tin nghĩa vụ người nộp thuế bằng:</p>
+                <ul>
+                    <li><strong>Mã số thuế (MST):</strong> Nhập mã số thuế 10 hoặc 13 chữ số</li>
+                    <li><strong>Số định danh công dân (CCCD):</strong> Nhập số CCCD 9 hoặc 12 chữ số</li>
+                </ul>
+                
+                <h4>2. Quy định về bảo mật</h4>
+                <ul>
+                    <li>Mỗi địa chỉ IP được giới hạn 20 yêu cầu/phút</li>
+                    <li>Thông tin CCCD được che khuất (masked) khi hiển thị</li>
+                    <li>Cần nhập mã xác thực (captcha) trước mỗi lần tra cứu</li>
+                </ul>
+                
+                <h4>3. Đăng nhập quản trị</h4>
+                <p>Tài khoản quản trị cần được cấp bởi quản trị viên hệ thống.</p>
+                <ul>
+                    <li>Đăng nhập tại: <code>/auth/login</code></li>
+                    <li>Tài khoản mặc định: <code>admin / admin123</code></li>
+                </ul>
+                
+                <h4>4. Nhập dữ liệu Excel</h4>
+                <p>Quản trị viên có thể nhập dữ liệu từ file Excel với các cột:</p>
+                <ul>
+                    <li><code>MST</code> (bắt buộc)</li>
+                    <li><code>HO_TEN</code> (bắt buộc)</li>
+                    <li><code>CCCD</code>, <code>CMT</code>, <code>DIA_CHI</code> (tùy chọn)</li>
+                    <li><code>TRANG_THAI_HD</code>, <code>NO_TAM_TINH</code>, <code>LOAI_NO</code> (tùy chọn)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

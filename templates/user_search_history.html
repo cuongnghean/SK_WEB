@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Lịch sử tra cứu{% endblock %}
+
+{% block page_title %}Lịch sử tra cứu{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('user.dashboard') }}">User</a></li>
+<li class="breadcrumb-item active">Lịch sử tra cứu</li>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-history mr-1"></i>
+            Lịch sử tra cứu của bạn
+        </h3>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Loại tra cứu</th>
+                    <th>Giá trị</th>
+                    <th>Số kết quả</th>
+                    <th>Thời gian</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ loop.index + (pagination.current_page - 1) * pagination.per_page }}</td>
+                    <td>
+                        {% if log.SEARCH_TYPE == 'MST' %}
+                            <span class="badge bg-primary">MST</span>
+                        {% elif log.SEARCH_TYPE == 'CCCD' %}
+                            <span class="badge bg-info">CCCD</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ log.SEARCH_TYPE }}</span>
+                        {% endif %}
+                    </td>
+                    <td><code>{{ log.SEARCH_VALUE }}</code></td>
+                    <td>{{ log.RESULT_COUNT }}</td>
+                    <td>{{ log.CREATED_AT.strftime('%d/%m/%Y %H:%M:%S') if log.CREATED_AT else 'N/A' }}</td>
+                    <td>
+                        {% if log.STATUS == 'SUCCESS' %}
+                            <span class="badge bg-success">Thành công</span>
+                        {% elif log.STATUS == 'NOT_FOUND' %}
+                            <span class="badge bg-warning">Không tìm thấy</span>
+                        {% else %}
+                            <span class="badge bg-danger">Lỗi</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">Chưa có lịch sử tra cứu</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if pagination.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pagination.current_page - 1 }}">Trước</a>
+                </li>
+                {% endif %}
+                
+                {% for p in range(1, pagination.pages + 1) %}
+                    {% if p >= pagination.current_page - 2 and p <= pagination.current_page + 2 %}
+                        <li class="page-item {% if p == pagination.current_page %}active{% endif %}">
+                            <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if pagination.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ pagination.current_page + 1 }}">Sau</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

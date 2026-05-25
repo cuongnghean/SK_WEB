@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý người dùng{% endblock %}
+
+{% block page_title %}Quản lý Người dùng{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item active">Người dùng</li>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-6">
+                <h3 class="card-title">
+                    <i class="fas fa-users mr-1"></i>
+                    Quản lý Người dùng
+                </h3>
+            </div>
+            <div class="col-md-6 text-right">
+                <button class="btn btn-success" onclick="showAddUserModal()">
+                    <i class="fas fa-plus"></i> Thêm người dùng
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tên đăng nhập</th>
+                    <th>Email</th>
+                    <th>Họ tên</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Đăng nhập cuối</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td><strong>{{ user.username }}</strong></td>
+                    <td>{{ user.email or 'N/A' }}</td>
+                    <td>{{ user.full_name or 'N/A' }}</td>
+                    <td>
+                        {% if user.role == 'ADMIN' %}
+                            <span class="badge bg-danger">Admin</span>
+                        {% else %}
+                            <span class="badge bg-primary">User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.is_active %}
+                            <span class="badge bg-success">Hoạt động</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Bị khóa</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.last_login.strftime('%d/%m/%Y %H:%M') if user.last_login else 'Chưa đăng nhập' }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="editUser({{ user.id }})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        {% if user.id != current_user.id %}
+                        <button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userModalTitle">Thêm người dùng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="userForm">
+                <div class="modal-body">
+                    <input type="hidden" id="userId">
+                    <div class="mb-3">
+                        <label class="form-label">Tên đăng nhập</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Họ tên</label>
+                        <input type="text" class="form-control" id="fullName">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu <span id="passwordHint">(bắt buộc cho người dùng mới)</span></label>
+                        <input type="password" class="form-control" id="password">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Vai trò</label>
+                        <select class="form-select" id="role">
+                            <option value="USER">Người dùng</option>
+                            <option value="ADMIN">Quản trị viên</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isActive" checked>
+                            <label class="form-check-label" for="isActive">Hoạt động</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+var users = {{ users_json|tojson }};
+
+function showAddUserModal() {
+    $('#userModalTitle').text('Thêm người dùng');
+    $('#userForm')[0].reset();
+    $('#userId').val('');
+    $('#password').prop('required', true);
+    $('#passwordHint').show();
+    $('#userModal').modal('show');
+}
+
+function editUser(userId) {
+    var user = users.find(u => u.id === userId);
+    if (!user) return;
+    
+    $('#userModalTitle').text('Sửa người dùng');
+    $('#userId').val(user.id);
+    $('#username').val(user.username).prop('disabled', true);
+    $('#email').val(user.email || '');
+    $('#fullName').val(user.full_name || '');
+    $('#role').val(user.role);
+    $('#isActive').prop('checked', user.is_active);
+    $('#password').prop('required', false);
+    $('#passwordHint').hide();
+    $('#userModal').modal('show');
+}
+
+function deleteUser(userId, username) {
+    if (!confirm('Bạn có chắc muốn xóa người dùng "' + username + '"?')) return;
+    
+    $.ajax({
+        url: '/admin/api/users/' + userId,
+        type: 'DELETE',
+        success: function(response) {
+            if (response.success) {
+                toastr.success('Đã xóa người dùng');
+                location.reload();
+            } else {
+                toastr.error(response.error);
+            }
+        }
+    });
+}
+
+$('#userForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    var userId = $('#userId').val();
+    var isNew = !userId;
+    var url = isNew ? '/admin/api/users' : '/admin/api/users/' + userId;
+    var method = isNew ? 'POST' : 'PUT';
+    
+    var data = {
+        username: $('#username').val(),
+        email: $('#email').val(),
+        full_name: $('#fullName').val(),
+        role: $('#role').val(),
+        is_active: $('#isActive').prop('checked')
+    };
+    
+    var password = $('#password').val();
+    if (password) {
+        data.password = password;
+    }
+    
+    $.ajax({
+        url: url,
+        type: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+            if (response.success) {
+                toastr.success('Đã lưu người dùng');
+                $('#userModal').modal('hide');
+                location.reload();
+            } else {
+                toastr.error(response.error);
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

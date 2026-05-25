@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}403 - Không có quyền truy cập{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-content">
+        <h1 class="headline text-danger">403</h1>
+        <h3><i class="fas fa-ban text-danger"></i> Không có quyền truy cập</h3>
+        <p>Bạn không có quyền truy cập trang này.</p>
+        <a href="{{ url_for('public.search') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i> Về trang chủ
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Quản trị - Hệ thống Tra cứu Thuế{% endblock %}
+
+{% block page_title %}Dashboard Quản trị{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-primary">
+            <div class="inner">
+                <h3 id="totalNnt">{{ stats.get('total_nnt', 0)|default(0) }}</h3>
+                <p>Tổng số NNT</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <a href="{{ url_for('admin.nnt_list') }}" class="small-box-footer">
+                Xem chi tiết <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-danger">
+            <div class="inner">
+                <h3 id="totalDebt">{{ "{:,.0f}".format(stats.get('total_debt', 0)|default(0)|int) }} VND</h3>
+                <p>Tổng nợ thuế</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <a href="#" class="small-box-footer">
+                Chi tiết nợ <i class="fas fa-arrow-circle-right"></i>
+            </a>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-warning">
+            <div class="inner">
+                <h3 id="newNntToday">{{ stats.get('new_nnt_today', 0)|default(0) }}</h3>
+                <p>NNT mới hôm nay</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <span class="small-box-footer">
+                Tháng này: {{ stats.get('new_nnt_month', 0)|default(0) }}
+            </span>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-6">
+        <div class="small-box bg-success">
+            <div class="inner">
+                <h3 id="noDebtPercent">
+                    {% if stats.get('total_nnt', 0) > 0 %}
+                        {{ ((stats.get('status_breakdown', {}).get('KHONG_NO', 0) / stats.get('total_nnt', 1)) * 100)|round(1) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </h3>
+                <p>Tỷ lệ không nợ</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <span class="small-box-footer">
+                {{ stats.get('status_breakdown', {}).get('CO_NO', 0)|default(0) }} đối tượng có nợ
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card card-primary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-pie mr-1"></i>
+                    Tình trạng nợ thuế
+                </h3>
+            </div>
+            <div class="card-body">
+                <canvas id="debtStatusChart" style="min-height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card card-success">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar mr-1"></i>
+                    Biến động nợ theo tháng
+                </h3>
+            </div>
+            <div class="card-body">
+                <canvas id="debtTrendChart" style="min-height: 250px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Tables Row -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card card-info">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                    Top 10 đối tượng nợ lớn nhất
+                </h3>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>MST</th>
+                            <th>Họ tên</th>
+                            <th class="text-right">Số nợ</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topDebtorsTable">
+                        {% for debtor in top_debtors %}
+                        <tr>
+                            <td><code>{{ debtor.MST }}</code></td>
+                            <td>{{ debtor.HO_TEN }}</td>
+                            <td class="text-right text-danger font-weight-bold">
+                                {{ "{:,.0f}".format(debtor.total_debt) }}
+                            </td>
+                            <td>
+                                {% if debtor.TRANG_THAI_NO == 'CO_NO' %}
+                                    <span class="badge bg-danger">Có nợ</span>
+                                {% else %}
+                                    <span class="badge bg-success">Không nợ</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Không có dữ liệu</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card card-secondary">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-history mr-1"></i>
+                    Nhập liệu gần đây
+                </h3>
+            </div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Tệp tin</th>
+                            <th>Người nhập</th>
+                            <th class="text-right">Thành công</th>
+                            <th>Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for imp in recent_imports %}
+                        <tr>
+                            <td><code>{{ imp.file_name[:30] }}</code></td>
+                            <td>{{ imp.import_by or 'System' }}</td>
+                            <td class="text-right">
+                                {% if imp.status == 'COMPLETED' %}
+                                    <span class="text-success">{{ imp.success_rows }}</span>
+                                {% elif imp.status == 'PARTIAL' %}
+                                    <span class="text-warning">{{ imp.success_rows }}/{{ imp.total_rows }}</span>
+                                {% else %}
+                                    <span class="text-danger">{{ imp.success_rows }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ imp.created_at|datetime_format if imp.created_at else 'N/A' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Chưa có lịch sử nhập liệu</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card card-dark">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-bolt mr-1"></i>
+                    Thao tác nhanh
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin.import_page') }}" class="btn btn-primary btn-block">
+                            <i class="fas fa-upload mr-2"></i> Nhập dữ liệu Excel
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin.nnt_list') }}" class="btn btn-info btn-block">
+                            <i class="fas fa-list mr-2"></i> Danh sách NNT
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin.user_list') }}" class="btn btn-success btn-block">
+                            <i class="fas fa-users mr-2"></i> Quản lý Users
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{{ url_for('admin.search_logs') }}" class="btn btn-secondary btn-block">
+                            <i class="fas fa-history mr-2"></i> Nhật ký tra cứu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Chart configurations
+document.addEventListener('DOMContentLoaded', function() {
+    // Debt Status Pie Chart
+    const debtStatusCtx = document.getElementById('debtStatusChart').getContext('2d');
+    const debtStatusData = {
+        labels: ['Có nợ thuế', 'Không có nợ'],
+        datasets: [{
+            data: [
+                {{ stats.get('status_breakdown', {}).get('CO_NO', 0) }},
+                {{ stats.get('status_breakdown', {}).get('KHONG_NO', 0) }}
+            ],
+            backgroundColor: ['#dc3545', '#28a745'],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    };
+    
+    new Chart(debtStatusCtx, {
+        type: 'doughnut',
+        data: debtStatusData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.raw / total) * 100).toFixed(1);
+                            return context.label + ': ' + context.raw + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Debt Trend Bar Chart (API not available yet)
+    // fetchMonthlyTrend();
+});
+
+// async function fetchMonthlyTrend() {
+    // TODO: Add API endpoint if needed
+// }
+
+// Format currency helper
+function formatCurrency(amount) {
+    if (amount === null || amount === undefined || amount === 0) return '0 VND';
+    return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
+}
+</script>
+{% endblock %}
+
+{% macro datetime_format(value) %}
+    {% if value %}
+        {{ value.strftime('%d/%m/%Y %H:%M') }}
+    {% else %}
+        N/A
+    {% endif %}
+{% endmacro %}
+
+{%- macro format_currency(value) -%}
+    {%- if value -%}
+        {{ "{:,.0f}".format(value|float).replace(",", ".") }} VND
+    {%- else -%}
+        0 VND
+    {%- endif -%}
+{%- endmacro -%}

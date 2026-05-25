@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}500 - Lỗi hệ thống{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-content">
+        <h1 class="headline text-danger">500</h1>
+        <h3><i class="fas fa-exclamation-circle text-danger"></i> Đã xảy ra lỗi!</h3>
+        <p>
+            Xin lỗi, đã xảy ra lỗi nội bộ trong hệ thống. Vui lòng thử lại sau hoặc liên hệ với quản trị viên.
+        </p>
+        <a href="{{ url_for('public.search') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i> Về trang chủ
+        </a>
+    </div>
+</div>
+{% endblock %}

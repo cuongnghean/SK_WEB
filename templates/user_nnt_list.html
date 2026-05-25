@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Danh sách NNT{% endblock %}
+
+{% block page_title %}Danh sách Người Nộp Thuế{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('user.dashboard') }}">User</a></li>
+<li class="breadcrumb-item active">Danh sách NNT</li>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-list mr-1"></i>
+            Danh sách Người Nộp Thuế (Chỉ xem)
+        </h3>
+    </div>
+    <div class="card-body">
+        <!-- Filters -->
+        <form method="GET" class="mb-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <input type="text" name="q" class="form-control" 
+                           placeholder="Tìm kiếm MST, tên..." 
+                           value="{{ filters.search }}">
+                </div>
+                <div class="col-md-4">
+                    <select name="status" class="form-select">
+                        <option value="">-- Trạng thái nợ --</option>
+                        <option value="CO_NO" {% if filters.status == 'CO_NO' %}selected{% endif %}>Có nợ</option>
+                        <option value="KHONG_NO" {% if filters.status == 'KHONG_NO' %}selected{% endif %}>Không nợ</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Tìm
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Data Table -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>MST</th>
+                        <th>Họ tên</th>
+                        <th>CCCD (đã ẩn)</th>
+                        <th>Trạng thái nợ</th>
+                        <th>Ngày tạo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for nnt in nnt_list %}
+                    <tr>
+                        <td><code>{{ nnt.MST }}</code></td>
+                        <td>{{ nnt.HO_TEN }}</td>
+                        <td><code>{{ nnt.CCCD or 'N/A' }}</code></td>
+                        <td>
+                            {% if nnt.TRANG_THAI_NO == 'CO_NO' %}
+                                <span class="badge bg-danger">Có nợ</span>
+                            {% else %}
+                                <span class="badge bg-success">Không nợ</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ nnt.NGAY_TAO.strftime('%d/%m/%Y') if nnt.NGAY_TAO else 'N/A' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">Không có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% for p in range(1, pagination.pages + 1) %}
+                    {% if p >= pagination.current_page - 2 and p <= pagination.current_page + 2 %}
+                        <li class="page-item {% if p == pagination.current_page %}active{% endif %}">
+                            <a class="page-link" href="?page={{ p }}&q={{ filters.search }}&status={{ filters.status }}">{{ p }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

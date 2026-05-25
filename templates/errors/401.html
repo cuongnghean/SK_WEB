@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}401 - Chưa đăng nhập{% endblock %}
+
+{% block content %}
+<div class="error-page">
+    <div class="error-content">
+        <h1 class="headline text-warning">401</h1>
+        <h3><i class="fas fa-exclamation-triangle text-warning"></i> Chưa đăng nhập</h3>
+        <p>Bạn cần đăng nhập để truy cập trang này.</p>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt"></i> Đăng nhập
+        </a>
+    </div>
+</div>
+{% endblock %}

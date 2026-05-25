@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Danh sách NNT - Admin{% endblock %}
+
+{% block page_title %}Danh sách Người Nộp Thuế{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
+<li class="breadcrumb-item active">Danh sách NNT</li>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="row">
+            <div class="col-md-6">
+                <h3 class="card-title">
+                    <i class="fas fa-list mr-1"></i>
+                    Danh sách Người Nộp Thuế
+                </h3>
+            </div>
+            <div class="col-md-6 text-right">
+                <a href="{{ url_for('admin.import_page') }}" class="btn btn-success">
+                    <i class="fas fa-upload"></i> Nhập Excel
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- Filters -->
+        <form method="GET" class="mb-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <input type="text" name="q" class="form-control" 
+                           placeholder="Tìm kiếm MST, tên..." 
+                           value="{{ filters.search }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">-- Trạng thái nợ --</option>
+                        <option value="CO_NO" {% if filters.status == 'CO_NO' %}selected{% endif %}>Có nợ</option>
+                        <option value="KHONG_NO" {% if filters.status == 'KHONG_NO' %}selected{% endif %}>Không nợ</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select name="sort" class="form-select">
+                        <option value="MST" {% if filters.sort == 'MST' %}selected{% endif %}>MST</option>
+                        <option value="HO_TEN" {% if filters.sort == 'HO_TEN' %}selected{% endif %}>Họ tên</option>
+                        <option value="NGAY_TAO" {% if filters.sort == 'NGAY_TAO' %}selected{% endif %}>Ngày tạo</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Tìm
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Data Table -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="nntTable">
+                <thead>
+                    <tr>
+                        <th>MST</th>
+                        <th>Họ tên</th>
+                        <th>CCCD</th>
+                        <th>Địa chỉ</th>
+                        <th>Trạng thái nợ</th>
+                        <th>Trạng thái HD</th>
+                        <th>Ngày tạo</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for nnt in nnt_list %}
+                    <tr>
+                        <td><code>{{ nnt.MST }}</code></td>
+                        <td>{{ nnt.HO_TEN }}</td>
+                        <td><code>{{ nnt.CCCD or 'N/A' }}</code></td>
+                        <td>{{ nnt.DIA_CHI[:50] + '...' if nnt.DIA_CHI and nnt.DIA_CHI|length > 50 else nnt.DIA_CHI or 'N/A' }}</td>
+                        <td>
+                            {% if nnt.TRANG_THAI_NO == 'CO_NO' %}
+                                <span class="badge bg-danger">Có nợ</span>
+                            {% else %}
+                                <span class="badge bg-success">Không nợ</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if nnt.TRANG_THAI_HD == 'Active' %}
+                                <span class="badge bg-primary">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ nnt.NGAY_TAO.strftime('%d/%m/%Y') if nnt.NGAY_TAO else 'N/A' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="viewNNT('{{ nnt.MST }}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="editNNT('{{ nnt.MST }}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteNNT('{{ nnt.MST }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">Không có dữ liệu</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if pagination.pages > 1 %}
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% for p in range(1, pagination.pages + 1) %}
+                    {% if p >= pagination.current_page - 2 and p <= pagination.current_page + 2 %}
+                        <li class="page-item {% if p == pagination.current_page %}active{% endif %}">
+                            <a class="page-link" href="?page={{ p }}&q={{ filters.search }}&status={{ filters.status }}&sort={{ filters.sort }}">{{ p }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function viewNNT(mst) {
+    $.get('/admin/api/nnt/' + mst, function(response) {
+        if (response.success) {
+            const data = response.nnt;
+            let html = `
+                <table class="table table-borderless">
+                    <tr><th width="35%">MST:</th><td>${data.MST}</td></tr>
+                    <tr><th>Họ tên:</th><td>${data.HO_TEN}</td></tr>
+                    <tr><th>CCCD:</th><td>${data.CCCD || 'N/A'}</td></tr>
+                    <tr><th>CMT:</th><td>${data.CMT || 'N/A'}</td></tr>
+                    <tr><th>Địa chỉ:</th><td>${data.DIA_CHI || 'N/A'}</td></tr>
+                    <tr><th>Trạng thái nợ:</th><td>${data.TRANG_THAI_NO}</td></tr>
+                    <tr><th>Trạng thái HD:</th><td>${data.TRANG_THAI_HD}</td></tr>
+                </table>
+            `;
+            $('#modalContent').html(html);
+            $('#viewModal').modal('show');
+        }
+    });
+}
+
+function editNNT(mst) {
+    window.location.href = '/admin/nnt/' + mst + '/edit';
+}
+
+function deleteNNT(mst) {
+    if (confirm('Bạn có chắc muốn xóa NNT này?')) {
+        $.ajax({
+            url: '/admin/api/nnt/' + mst,
+            type: 'DELETE',
+            success: function(response) {
+                if (response.success) {
+                    toastr.success('Đã xóa thành công');
+                    location.reload();
+                } else {
+                    toastr.error(response.error);
+                }
+            }
+        });
+    }
+}
+</script>
+
+<!-- View Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chi tiết NNT</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalContent">
+                <!-- Content loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
