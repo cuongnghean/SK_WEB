@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Hệ thống Tra cứu và Quản lý Nghĩa vụ Người Nộp Thuế
 
 ## Mục lục
@@ -297,3 +298,6 @@ SK_WEB/
 ## License
 
 Copyright © 2026 Tổng cục Thuế Việt Nam
+=======
+# SK_WEB
+>>>>>>> 26508d04b4a6a556a2f300ec0282e5f2bae211c5
